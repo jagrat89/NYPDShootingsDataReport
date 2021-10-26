@@ -219,3 +219,9 @@ m_data_pred %>% ggplot() +
 ## Conclusion
 
 In this report the analyses, model and visualizations were on, how the Ratio of each provided Gender compared to each other in Perpetrators and Victims, and saw the period in which these incidents happen, and a Linear Model. For future work, many other analyses are possible, such as a **Demographics-based Visualization** or an **Age-Group-based Visualization**, etc.
+
+## Session Info
+
+```{r session_inf}
+sessionInfo()
+```
