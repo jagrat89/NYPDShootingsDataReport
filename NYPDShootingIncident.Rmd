@@ -1,0 +1,221 @@
+---
+title: "NYPD Shooting Incident"
+author: ''
+date: "23/10/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Import Library
+
+```{r library_imp, warning = FALSE, message = FALSE}
+  library(tidyverse)
+  library(lubridate)
+  library(scales) 
+```
+
+## Import Data
+
+Importing the NYPD Shooting Incident Data form [Catalog Data](https://catalog.data.gov/dataset)
+
+
+```{r import_data, echo=FALSE, include=FALSE}
+  
+  url <- "https://data.cityofnewyork.us/api/views/833y-fsy8/rows.csv?accessType=DOWNLOAD"
+  nypd_data = read_csv(url)
+  nypd_data
+```
+
+### Import Summary
+
+```{r import_summary}
+  summary(nypd_data)
+```
+
+---
+
+## Tidy
+
+Identified the following variables necessary for my analysis on nypd_data.
+
+- PERP_SEX 
+- VIC_SEX
+- BORO
+- OCCUR_TIME
+- OCCUR_DATE
+- Longitude
+
+Tidying the data by removing all other variables, and transforming the OCCUR_DATE from character format to Date Object.
+
+```{r tidy_data, echo=FALSE, warning=FALSE}
+nypd_data <- nypd_data %>% select(-c(INCIDENT_KEY,PRECINCT,JURISDICTION_CODE,LOCATION_DESC,PERP_RACE,VIC_AGE_GROUP,VIC_RACE,X_COORD_CD,Y_COORD_CD,Lon_Lat,PERP_AGE_GROUP,Latitude,STATISTICAL_MURDER_FLAG)) %>% 
+  mutate(OCCUR_DATE = mdy(OCCUR_DATE))
+# Changing date type to an date object
+
+```
+
+### Tidy Summary 
+
+```{r tidy_summary}
+  summary(nypd_data)
+```
+
+---
+
+## Missing Data
+In the following analysis, the missing data (NA/NR/U) has been ignored.
+
+---
+
+## Visualization
+
+### Sex based comparison of Perpatrators 
+
+```{r bar_plot_gend_perp}
+x <- c("Male","Female")
+y <- c(nrow(nypd_data %>% filter(PERP_SEX == 'M')),
+       nrow(nypd_data %>% filter(PERP_SEX == 'F')))
+perc <- paste0(round(100 * y/sum(y), 2), "%")
+colors <- c('cadetblue1','pink')
+pie(y,label = perc,main = "Perpatrators", col = colors)
+legend("bottomright", x, fill = colors)
+```
+
+### Sex based comparison of Victims 
+
+```{r bar_plot_gend_vic}
+x <- c("Male","Female")
+y <- c(nrow(nypd_data %>% filter(VIC_SEX == 'M')),
+       nrow(nypd_data %>% filter(VIC_SEX == 'F')))
+perc <- paste0(round(100 * y/sum(y), 2), "%")
+colors <- c('dodgerblue1','gold')
+pie(y,label = perc,main = "Victims", col = colors)
+legend("bottomright", x, fill = colors)
+```
+
+### Sex based Victims ratio of Male Perpatrators
+
+```{r pm_to_vic}
+pmd <- nypd_data %>% filter(PERP_SEX == 'M') 
+pmd_f_c <- nrow(pmd %>% filter(VIC_SEX == "F"))
+pmd_m_c <- nrow(pmd %>% filter(VIC_SEX == "M"))
+x <- c("Male","Female")
+y <- c(pmd_m_c,pmd_f_c)
+perc <- paste0(round(100 * y/sum(y), 2), "%")
+colors <- c('dodgerblue1','gold')
+pie(y,label = perc,main = "Victims of Male Perpatrators", col = colors)
+legend("bottomright", x, fill = colors)
+```
+
+### Sex based Victims ratio of Female Perpatrators
+
+```{r pf_to_vic}
+pmd <- nypd_data %>% filter(PERP_SEX == 'F') 
+pfd_f_c <- nrow(pmd %>% filter(VIC_SEX == "F"))
+pfd_m_c <- nrow(pmd %>% filter(VIC_SEX == "M"))
+x <- c("Male","Female")
+y <- c(pfd_m_c,pfd_f_c)
+perc <- paste0(round(100 * y/sum(y), 2), "%")
+colors <- c('dodgerblue1','gold')
+pie(y,label = perc,main = "Victims of Female Perpatrators", col = colors)
+legend("bottomright", x, fill = colors)
+```
+
+### Sex based Perpatrators ratio of Male Victims
+
+```{r vm_to_p}
+pmd <- nypd_data %>% filter(VIC_SEX == 'M') 
+pfd_f_c <- nrow(pmd %>% filter(PERP_SEX == "F"))
+pfd_m_c <- nrow(pmd %>% filter(PERP_SEX == "M"))
+x <- c("Male","Female")
+y <- c(pfd_m_c,pfd_f_c)
+perc <- paste0(round(100 * y/sum(y), 2), "%")
+colors <- c('cadetblue1','pink')
+pie(y,label = perc,main = "Perpatrators of Male Victims", col = colors)
+legend("bottomright", x, fill = colors)
+```
+
+### Sex based Perpatrators ratio of Female Victims
+
+```{r vf_to_p}
+pmd <- nypd_data %>% filter(VIC_SEX == 'F') 
+pfd_f_c <- nrow(pmd %>% filter(PERP_SEX == "F"))
+pfd_m_c <- nrow(pmd %>% filter(PERP_SEX == "M"))
+x <- c("Male","Female")
+y <- c(pfd_m_c,pfd_f_c)
+perc <- paste0(round(100 * y/sum(y), 2), "%")
+colors <- c('cadetblue1','pink')
+pie(y,label = perc,main = "Perpatrators of Female Victims", col = colors)
+legend("bottomright", x, fill = colors)
+```
+
+### Date-Time Scatter plot 
+
+```{r tim_plot}
+  tt_data <- nypd_data %>% filter(OCCUR_DATE > '2018-12-31' & OCCUR_DATE < '2020-1-1')  
+  tp <- ggplot(tt_data, aes(OCCUR_DATE, OCCUR_TIME)) +
+           geom_point(na.rm=TRUE, color="blue", size=1) + 
+           ggtitle("NYPD Shooting Data of 2019") +
+           xlab("Date") + ylab("Time") 
+  tpb <- tp + (scale_x_date(breaks = date_breaks("1 month"),labels=date_format("%b %m")))
+  tt_data1 <- nypd_data %>% filter(OCCUR_DATE > '2019-12-31' & OCCUR_DATE < '2020-12-6')  
+  tp1 <- ggplot(tt_data1, aes(OCCUR_DATE, OCCUR_TIME)) +
+           geom_point(na.rm=TRUE, color="blue", size=1) + 
+           ggtitle("NYPD Shooting Data of 2020") +
+           xlab("Date") + ylab("Time")
+  tpb1 <- tp1 + (scale_x_date(breaks = date_breaks("1 month"),labels=date_format("%b %m")))
+  
+  tpb
+  tpb1
+```
+
+## Analysis of Date-Time Scatter Plot
+The Shooting Incidents drop in the mid-morining(8 to 11 am). Shooting Incidents have increased in 2020.
+
+### Borough wise Density Comparison
+
+```{r boro_comp}
+b_l <- unique(nypd_data$BORO)
+y <- c(nrow(nypd_data %>% filter(BORO == b_l[1])),
+       nrow(nypd_data %>% filter(BORO == b_l[2])),
+       nrow(nypd_data %>% filter(BORO == b_l[3])),
+       nrow(nypd_data %>% filter(BORO == b_l[4])),
+       nrow(nypd_data %>% filter(BORO == b_l[5])))
+perc <- paste0(round(100 * y/sum(y), 2), "%")
+colors <- c('dodgerblue1','gold','lightcoral','lightcyan4','ivory1')
+pie(y,label = perc,main = "Borough", col = colors)
+legend("bottomright", b_l, fill = colors, cex = 0.7)
+```
+
+### Saftey Index of Boroughs
+The index is in highest to lowest order.
+
+1. Staten Island
+2. Manhattan
+3. Queens
+4. Bronx
+5. Brooklyn
+
+### Model
+
+A basic **Linear Model**, which predicts the **Longitude** of a crime on a specific date. This model uses the existing data to predict the outcome, which has been compared with the real outcomes.
+
+```{r ln_mod}
+m_data <- nypd_data %>% filter(OCCUR_DATE >= "2007-1-1" & OCCUR_DATE <= "2007-1-31")
+mod <- lm(Longitude ~ OCCUR_DATE,data = m_data)
+m_data_pred <- m_data %>% mutate(pred = predict(mod))
+m_data_pred %>% ggplot() +
+ ggtitle("January 2007") + 
+ geom_point(aes(x = OCCUR_DATE,y = Longitude),color = "blue") +  
+ geom_point(aes(x = OCCUR_DATE,y = pred),color = "red")   
+```
+
+## Conclusion
+
+In this report the analyses, model and visualizations were on, how the Ratio of each provided Gender compared to each other in Perpetrators and Victims, and saw the period in which these incidents happen, and a Linear Model. For future work, many other analyses are possible, such as a **Demographics-based Visualization** or an **Age-Group-based Visualization**, etc.
